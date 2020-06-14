@@ -27,6 +27,11 @@ typedef Widget MarkdownImageBuilder(Uri uri, String title, String alt);
 /// Used by [MarkdownWidget.checkboxBuilder]
 typedef Widget MarkdownCheckboxBuilder(bool value);
 
+/// Signature for custom block tag widget.
+///
+/// Used by [MarkdownWidget.customBlockTagBuilder]
+typedef Widget MarkdownCustomBlockTagBuilder(String tag, md.Element element);
+
 /// Creates a format [TextSpan] given a string.
 ///
 /// Used by [MarkdownWidget] to highlight the contents of `pre` elements.
@@ -71,6 +76,8 @@ abstract class MarkdownWidget extends StatefulWidget {
     this.imageBuilder,
     this.checkboxBuilder,
     this.fitContent = false,
+    this.customBlockTagBuilder,
+    this.supportedCustomBlockTags,
   })  : assert(data != null),
         assert(selectable != null),
         super(key: key);
@@ -118,6 +125,10 @@ abstract class MarkdownWidget extends StatefulWidget {
   /// Whether to allow the widget to fit the child content.
   final bool fitContent;
 
+  final MarkdownCustomBlockTagBuilder customBlockTagBuilder;
+
+  final List<String> supportedCustomBlockTags;
+
   /// Subclasses should override this function to display the given children,
   /// which are the parsed representation of [data].
   @protected
@@ -131,6 +142,10 @@ class _MarkdownWidgetState extends State<MarkdownWidget>
     implements MarkdownBuilderDelegate {
   List<Widget> _children;
   final List<GestureRecognizer> _recognizers = <GestureRecognizer>[];
+
+  @override
+  List<String> get supportedCustomBlockTags => widget.supportedCustomBlockTags;
+
 
   @override
   void didChangeDependencies() {
@@ -207,7 +222,12 @@ class _MarkdownWidgetState extends State<MarkdownWidget>
   }
 
   @override
+  Widget buildCustomBlockTag(String tag, md.Element element) =>
+      widget.customBlockTagBuilder(tag, element);
+
+  @override
   Widget build(BuildContext context) => widget.build(context, _children);
+
 }
 
 /// A non-scrolling widget that parses and displays Markdown.
@@ -233,6 +253,8 @@ class MarkdownBody extends MarkdownWidget {
     md.ExtensionSet extensionSet,
     MarkdownImageBuilder imageBuilder,
     MarkdownCheckboxBuilder checkboxBuilder,
+    List<String> supportedCustomBlockTags,
+    MarkdownCustomBlockTagBuilder customBlockTagBuilder,
     this.shrinkWrap = true,
     this.fitContent = true,
   }) : super(
@@ -247,6 +269,8 @@ class MarkdownBody extends MarkdownWidget {
           extensionSet: extensionSet,
           imageBuilder: imageBuilder,
           checkboxBuilder: checkboxBuilder,
+          supportedCustomBlockTags: supportedCustomBlockTags,
+          customBlockTagBuilder: customBlockTagBuilder,
         );
 
   /// See [ScrollView.shrinkWrap]

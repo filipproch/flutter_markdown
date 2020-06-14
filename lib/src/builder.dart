@@ -32,8 +32,6 @@ const List<String> _kBlockTags = const <String>[
 
 const List<String> _kListTags = const <String>['ul', 'ol'];
 
-bool _isBlockTag(String tag) => _kBlockTags.contains(tag);
-
 bool _isListTag(String tag) => _kListTags.contains(tag);
 
 class _BlockElement {
@@ -83,6 +81,10 @@ abstract class MarkdownBuilderDelegate {
   ///
   /// The `styleSheet` is the value of [MarkdownBuilder.styleSheet].
   TextSpan formatText(MarkdownStyleSheet styleSheet, String code);
+
+  List<String> get supportedCustomBlockTags;
+
+  Widget buildCustomBlockTag(String tag, md.Element element);
 }
 
 /// Builds a [Widget] tree from parsed Markdown.
@@ -132,6 +134,9 @@ class MarkdownBuilder implements md.NodeVisitor {
   final List<GestureRecognizer> _linkHandlers = <GestureRecognizer>[];
   String _currentBlockTag;
   bool _isInBlockquote = false;
+
+  bool _isBlockTag(String tag) => _kBlockTags.contains(tag)
+      || (delegate.supportedCustomBlockTags?.contains(tag) ?? false);
 
   /// Returns widgets that display the given Markdown nodes.
   ///
@@ -300,6 +305,8 @@ class MarkdownBuilder implements md.NodeVisitor {
         );
       } else if (tag == 'hr') {
         child = Container(decoration: styleSheet.horizontalRuleDecoration);
+      } else if (delegate.supportedCustomBlockTags?.contains(tag) ?? false) {
+        child = delegate.buildCustomBlockTag(tag, element);
       }
 
       _addBlockChild(child);
